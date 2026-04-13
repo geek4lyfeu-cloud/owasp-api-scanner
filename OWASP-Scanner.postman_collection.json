@@ -1,0 +1,390 @@
+{
+  "info": {
+    "_postman_id": "41fda69f-3f0a-4d10-ab7a-3b5e022a7123",
+    "name": "OWASP API Top 10 Scanner",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53875542",
+    "_collection_link": "https://go.postman.co/collection/53875542-41fda69f-3f0a-4d10-ab7a-3b5e022a7123?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "API1 - BOLA",
+      "item": [
+        {
+          "name": "Login - User Two",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"userTwo_token\", response.token);\r",
+                  "console.log(\"User Two token saved!\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"usertwo@test.com\",\r\n    \"password\": \"Password1!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8888/identity/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8888",
+              "path": [
+                "identity",
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - User One",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"userOne_token\", response.token);\r",
+                  "console.log(\"Token saved!\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"userone@test.com\",\r\n    \"password\": \"Password1!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8888/identity/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8888",
+              "path": [
+                "identity",
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BOLA - Access Another User's Data",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// User One is logged in but we'll try to access User Two's vehicle\r",
+                  "console.log(\"Attempting BOLA attack - User One accessing User Two's data\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"BOLA: Check if other user data is accessible\", function () {\r",
+                  "    const bodyText = pm.response.text();\r",
+                  "    pm.expect(bodyText).to.not.include(\"usertwo@test.com\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userOne_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/identity/api/v2/user/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "identity",
+                "api",
+                "v2",
+                "user",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BOLA - Get My Vehicles (User Two)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {\r",
+                  "    const response = pm.response.json();\r",
+                  "    if (Array.isArray(response) && response.length > 0) {\r",
+                  "        pm.environment.set(\"userTwo_vehicleId\", response[0].uuid);\r",
+                  "        console.log(\"Vehicle ID saved: \" + response[0].uuid);\r",
+                  "    }\r",
+                  "} catch(e) {\r",
+                  "    console.log(\"Could not parse response: \" + e);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userTwo_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/identity/api/v2/vehicle/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "identity",
+                "api",
+                "v2",
+                "vehicle",
+                "vehicles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BOLA - Attack User Two Vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"BOLA VULNERABILITY FOUND - User Two location exposed to User One\", function () {\r",
+                  "    if (pm.response.code === 200) {\r",
+                  "        const body = pm.response.json();\r",
+                  "        console.log(\"CRITICAL: User One accessed User Two location!\");\r",
+                  "        console.log(\"Exposed location: \" + JSON.stringify(body.vehicleLocation));\r",
+                  "        pm.expect(pm.response.code).to.equal(200); // Documents the vulnerability\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userOne_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/identity/api/v2/vehicle/{{userTwo_vehicleId}}/location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "identity",
+                "api",
+                "v2",
+                "vehicle",
+                "{{userTwo_vehicleId}}",
+                "location"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API2 - Broken Authentication",
+      "item": [
+        {
+          "name": "Broken Auth - Expired Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"API2: Invalid token should be rejected (401/403/404)\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404]);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwiZXhwIjoxfQ.fake",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/identity/api/v2/user/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "identity",
+                "api",
+                "v2",
+                "user",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API8 - Security Misconfiguration",
+      "item": [
+        {
+          "name": "Security Misconfig - Sensitive Headers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"API8 VULNERABILITY FOUND - Server header exposes openresty version\", function () {\r",
+                  "    const server = pm.response.headers.get(\"Server\");\r",
+                  "    if (server) {\r",
+                  "        console.log(\"CRITICAL: Server header exposed: \" + server);\r",
+                  "    }\r",
+                  "    pm.expect(server).to.not.be.undefined;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"API8: X-Powered-By header not exposed\", function () {\r",
+                  "    pm.expect(pm.response.headers.get(\"X-Powered-By\")).to.be.undefined;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"API8: X-Content-Type-Options header present\", function () {\r",
+                  "    pm.expect(pm.response.headers.get(\"X-Content-Type-Options\")).to.equal(\"nosniff\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userOne_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8888/identity/api/v2/user/dashboard",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8888",
+              "path": [
+                "identity",
+                "api",
+                "v2",
+                "user",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
